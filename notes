@@ -1,0 +1,29 @@
+consul agent -dev
+
+consul members
+
+consul services register counting1.hcl
+consul services register counting2.hcl
+consul services register dashbaord.hcl
+
+consul catalog services
+
+consul intention create dashboard counting
+
+consul connect envoy -sidecar-for counting-1 -admin-bind localhost:19001
+consul connect envoy -sidecar-for counting-2 -admin-bind localhost:19002
+consul connect envoy -sidecar-for dashboard
+
+http://localhost:9002 - dashboard UI
+http://localhost:8500 -> consul UI
+
+consul intention create -deny -replace dashboard counting
+
+consul services deregister counting1.hcl
+consul services deregister counting2.hcl
+consul services deregister dashboard.hcl
+
+
+STICKY SESSION:
+consul config write default.hcl
+consul config write hash-resolver.hcl
