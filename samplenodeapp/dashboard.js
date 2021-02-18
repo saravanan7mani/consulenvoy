@@ -1,4 +1,5 @@
 const https = require('https'); // Loads the http module 
+const http = require('http');
 const fs = require('fs');
 var setCookie = require('set-cookie-parser');
 var mycookie = '';
@@ -8,14 +9,26 @@ const httpsoptions = {
   cert: fs.readFileSync('cert.pem')
 };
 
-https.createServer(httpsoptions, (request, myresponse) => {
+function byteLength(str) {
+  // returns the byte length of an utf8 string
+  var s = str.length;
+  for (var i=str.length-1; i>=0; i--) {
+    var code = str.charCodeAt(i);
+    if (code > 0x7f && code <= 0x7ff) s++;
+    else if (code > 0x7ff && code <= 0xffff) s+=2;
+    if (code >= 0xDC00 && code <= 0xDFFF) i--; //trail surrogate
+  }
+  return s;
+}
+
+http.createServer((request, myresponse) => {
 
 	var url = request.url;
         if(url ==='/healthcheck') {
 	    myresponse.writeHead(200, {
                         'Content-Type': 'text/plain'
             });
-    	    myresponse.write('up'); //write a response
+    	    myresponse.write('dashboard up\n'); //write a response
             myresponse.end(); //end the response
             console.log('dashboard:: I am healthy');
     } else {
@@ -23,7 +36,7 @@ https.createServer(httpsoptions, (request, myresponse) => {
 	const xUserId = headers['x-user-id'];
 
 	var options = {
-	  host: 'localhost',
+	  host: '127.0.0.1',
 	  port: '5000',
 	};
 
@@ -50,11 +63,18 @@ https.createServer(httpsoptions, (request, myresponse) => {
 	  	//console.log('new mycookie is set: ' + mycookie);
 	  }
 	  
-	  var str = '';
+
+	  let len = 0;
 
 	  //another chunk of data has been received, so append it to `str`
 	  response.on('data', function (chunk) {
-		str += chunk;
+		
+		len += chunk.length;
+		console.log(chunk);
+		//if ((len%100) == 0){
+		//	console.log('length: ' + len);
+		//}
+		//len += byteLength(chunk);
 	  });
 
 	  //the whole response has been received, so we just print it out here
@@ -65,12 +85,12 @@ https.createServer(httpsoptions, (request, myresponse) => {
 		});
 
 		// 2. Write the announced text to the body of the page
-		str = 'I am dashboard and I received message - ' + str + '\n';
+		str = 'I am dashboard and I received message - ' + len + '\n';
 		myresponse.write(str);
 
 		// 3. Tell the server that all of the response headers and body have been sent
 		myresponse.end();
-		console.log(str);
+		console.log('len: ' + len);
 	  });
 	}
 //	console.log('mycookie in outside: ' + mycookie);
@@ -85,7 +105,7 @@ https.createServer(httpsoptions, (request, myresponse) => {
 	  };
 	}
 	
-	process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
-	https.request(options, callback).end();
+	//process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+	http.request(options, callback).end();
     }
-}).listen(9002); // 4. Tells the server what port to be on
+}).listen(9002, "127.0.0.1"); // 4. Tells the server what port to be on

@@ -1,4 +1,4 @@
-const https = require('https'); // Loads the http module 
+const https = require('http'); // Loads the http module 
 const fs = require('fs');
 
 const httpsoptions = {
@@ -6,7 +6,7 @@ const httpsoptions = {
   cert: fs.readFileSync('cert.pem')
 };
 
-https.createServer(httpsoptions, (request, myresponse) => {
+https.createServer((request, myresponse) => {
 
     const { headers } = request;
     const cookie = headers['cookie']; 
@@ -29,4 +29,4 @@ https.createServer(httpsoptions, (request, myresponse) => {
     }
 
 
-}).listen(9004); // 4. Tells the server what port to be on
+}).listen(9005, '172.0.0.1'); // 4. Tells the server what port to be on
